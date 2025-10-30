@@ -1,0 +1,381 @@
+600<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Quiz — Subjects & Power‑Ups</title>
+</head>
+<body>
+  <header>
+    <h1>School Quiz</h1>
+    <p>Subjects, timed questions, and power‑ups.</p>
+  </header>
+
+  <!-- MENU -->
+  <section id="menu">
+    <h2>New Game</h2>
+    <label for="subject">Subject:</label>
+    <select id="subject">
+      <option value="math">Math</option>
+      <option value="biology">Biology</option>
+      <option value="geography">Geography</option>
+      <option value="history">History</option>
+      <option value="computers">Computers</option>
+    </select>
+
+    <label for="questionCount">Questions:</label>
+    <select id="questionCount">
+      <option value="5">5</option>
+      <option value="10" selected>10</option>
+      <option value="15">15</option>
+    </select>
+
+    <label for="timePerQuestion">Time per question (sec):</label>
+    <select id="timePerQuestion">
+      <option value="15">15</option>
+      <option value="20" selected>20</option>
+      <option value="30">30</option>
+    </select>
+
+    <label for="lives">Lives:</label>
+    <select id="lives">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3" selected>3</option>
+    </select>
+
+    <details>
+      <summary>Power‑up settings</summary>
+      <div>
+        <label>50‑50 uses: <input id="pu5050" type="number" min="0" value="2" /></label>
+        <label>Skip uses: <input id="puSkip" type="number" min="0" value="2" /></label>
+        <label>Double Points uses: <input id="puDouble" type="number" min="0" value="1" /></label>
+        <label>Freeze Time (+10s) uses: <input id="puFreeze" type="number" min="0" value="1" /></label>
+        <label>Hint uses: <input id="puHint" type="number" min="0" value="2" /></label>
+      </div>
+    </details>
+
+    <button id="startBtn">Start</button>
+
+    <h3>High Scores</h3>
+    <div id="highScores"></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" hidden>
+    <h2 id="subjectLabel"></h2>
+    <div id="hud">
+      <p>Q: <span id="qIndex">1</span>/<span id="qTotal">10</span> | Score: <span id="score">0</span> | Lives: <span id="livesLeft">3</span> | Time: <span id="timeLeft">20</span>s</p>
+    </div>
+
+    <article id="questionCard">
+      <h3 id="questionText">Question</h3>
+      <ol id="choices"></ol>
+      <p id="hintArea"></p>
+    </article>
+
+    <section id="powerUps">
+      <h3>Power‑Ups</h3>
+      <div>
+        <button id="pu-5050">50‑50 (<span id="c5050">2</span>)</button>
+        <button id="pu-skip">Skip (<span id="cSkip">2</span>)</button>
+        <button id="pu-double">Double Points (<span id="cDouble">1</span>)</button>
+        <button id="pu-freeze">Freeze Time +10s (<span id="cFreeze">1</span>)</button>
+        <button id="pu-hint">Hint (<span id="cHint">2</span>)</button>
+      </div>
+      <p id="powerUpStatus"></p>
+    </section>
+
+    <p id="feedback"></p>
+    <button id="nextBtn" disabled>Next</button>
+  </section>
+
+  <!-- END -->
+  <section id="end" hidden>
+    <h2>Game Over</h2>
+    <p id="summary"></p>
+    <label>Player name: <input id="playerName" maxlength="20" placeholder="Your name" /></label>
+    <button id="saveScoreBtn">Save High Score</button>
+    <p id="saveMsg"></p>
+    <button id="playAgainBtn">Play Again</button>
+  </section>
+
+  <script>
+    const SUBJECTS = {
+      math: [
+        { q: "What is 12 × 8?", choices: ["80","96","108","112"], answer: 1, hint: "Think 12×(10−2)." },
+        { q: "Solve: 2x + 6 = 18", choices: ["x=5","x=6","x=7","x=8"], answer: 0, hint: "Subtract 6, then divide by 2." },
+        { q: "Prime number?", choices: ["21","27","29","33"], answer: 2, hint: "Only divisible by 1 and itself." },
+        { q: "Area of a 5×7 rectangle", choices: ["12","24","30","35"], answer: 3, hint: "Area = length×width." },
+        { q: "Square root of 144", choices: ["10","11","12","13"], answer: 2, hint: "12×12." },
+      ],
+      biology: [
+        { q: "Basic unit of life?", choices: ["Atom","Molecule","Cell","Organ"], answer: 2, hint: "All organisms are made of these." },
+        { q: "Process plants use to make food", choices: ["Respiration","Photosynthesis","Fermentation","Transpiration"], answer: 1, hint: "Involves chlorophyll and sunlight." },
+        { q: "DNA stands for…", choices: ["Deoxyribonucleic acid","Dioxyribonitric acid","Deoxyribose nucleic atom","Dinucleotide acid"], answer: 0, hint: "Deoxy‑ribo‑nucleic." },
+        { q: "Organ that pumps blood", choices: ["Liver","Heart","Lung","Kidney"], answer: 1, hint: "Cardiac." },
+        { q: "Vertebrates have…", choices: ["Backbone","Scales","Exoskeleton","Gills"], answer: 0, hint: "Spine present." },
+      ],
+      geography: [
+        { q: "Largest ocean", choices: ["Atlantic","Indian","Pacific","Arctic"], answer: 2, hint: "Covers ~30% of Earth." },
+        { q: "Capital of Japan", choices: ["Seoul","Kyoto","Tokyo","Osaka"], answer: 2, hint: "Most populous metro area." },
+        { q: "River through Egypt", choices: ["Nile","Amazon","Yangtze","Danube"], answer: 0, hint: "Flows north to the Med." },
+        { q: "Continent with Sahara", choices: ["Asia","Africa","Australia","South America"], answer: 1, hint: "Northern hemisphere desert." },
+        { q: "Mount Everest is in…", choices: ["Nepal/China","India/Pakistan","Bhutan","Mongolia"], answer: 0, hint: "On the Himalaya border." },
+      ],
+      history: [
+        { q: "Who painted the Mona Lisa?", choices: ["Da Vinci","Michelangelo","Raphael","Donatello"], answer: 0, hint: "Also an inventor." },
+        { q: "WWII ended in", choices: ["1943","1944","1945","1946"], answer: 2, hint: "Same year as Hiroshima." },
+        { q: "First US President", choices: ["Lincoln","Washington","Jefferson","Adams"], answer: 1, hint: "On the $1 bill." },
+        { q: "Pyramids country", choices: ["Mexico","Peru","Egypt","Iraq"], answer: 2, hint: "Giza plateau." },
+        { q: "Ancient Olympic Games origin", choices: ["Rome","Greece","Egypt","China"], answer: 1, hint: "Olympia." },
+      ],
+      computers: [
+        { q: "CPU stands for", choices: ["Central Processing Unit","Computer Personal Unit","Core Processing Utility","Central Peripheral Unit"], answer: 0, hint: "The computer's brain." },
+        { q: "Binary base", choices: ["2","8","10","16"], answer: 0, hint: "Bits 0/1." },
+        { q: "HTML is a…", choices: ["Programming language","Markup language","Database","OS"], answer: 1, hint: "It structures content." },
+        { q: "RAM is…", choices: ["Long‑term storage","Graphics chip","Random Access Memory","Read‑only media"], answer: 2, hint: "Volatile memory." },
+        { q: "URL part identifying server", choices: ["Protocol","Host","Path","Fragment"], answer: 1, hint: "Domain name." },
+      ],
+    };
+
+    const el = id => document.getElementById(id);
+
+    const state = {
+      subject: "math",
+      pool: [],
+      order: [],
+      index: 0,
+      score: 0,
+      lives: 3,
+      baseTime: 20,
+      timeLeft: 20,
+      timerId: null,
+      answered: false,
+      doubleNext: false,
+      powerUps: { fifty: 2, skip: 2, double: 1, freeze: 1, hint: 2 },
+    };
+
+    const randInt = n => Math.floor(Math.random() * n);
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) { const j = randInt(i + 1); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+      return arr;
+    }
+
+    function saveHighScore(subject, name, score) {
+      const key = `quiz-hs-${subject}`;
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
+      data.push({ name: name || "Player", score, date: new Date().toISOString() });
+      data.sort((a,b) => b.score - a.score);
+      localStorage.setItem(key, JSON.stringify(data.slice(0, 20)));
+    }
+
+    function renderHighScores() {
+      const subject = el("subject").value;
+      const key = `quiz-hs-${subject}`;
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
+      const list = data.map((r,i) => `${i+1}. ${r.name} — ${r.score}`).join("\n");
+      el("highScores").textContent = list || "No scores yet for this subject.";
+    }
+
+    function initGame() {
+      state.subject = el("subject").value;
+      const count = Number(el("questionCount").value);
+      state.baseTime = Number(el("timePerQuestion").value);
+      state.lives = Number(el("lives").value);
+      state.powerUps = {
+        fifty: Number(el("pu5050").value),
+        skip: Number(el("puSkip").value),
+        double: Number(el("puDouble").value),
+        freeze: Number(el("puFreeze").value),
+        hint: Number(el("puHint").value),
+      };
+      const pool = SUBJECTS[state.subject].slice();
+      while (pool.length < count) pool.push(...SUBJECTS[state.subject]);
+      state.pool = shuffle(pool).slice(0, count).map(q => ({ ...q }));
+      state.order = [...Array(state.pool.length).keys()];
+      state.index = 0;
+      state.score = 0;
+      state.answered = false;
+      state.doubleNext = false;
+      updateHudCounts();
+      el("qTotal").textContent = String(state.pool.length);
+      el("subjectLabel").textContent = `Subject: ${state.subject.toUpperCase()}`;
+      el("menu").hidden = true;
+      el("game").hidden = false;
+      el("end").hidden = true;
+      nextQuestion();
+    }
+
+    function updateHudCounts() {
+      el("livesLeft").textContent = String(state.lives);
+      el("score").textContent = String(state.score);
+      el("c5050").textContent = String(state.powerUps.fifty);
+      el("cSkip").textContent = String(state.powerUps.skip);
+      el("cDouble").textContent = String(state.powerUps.double);
+      el("cFreeze").textContent = String(state.powerUps.freeze);
+      el("cHint").textContent = String(state.powerUps.hint);
+    }
+
+    function startTimer() {
+      clearInterval(state.timerId);
+      state.timeLeft = state.baseTime;
+      el("timeLeft").textContent = String(state.timeLeft);
+      state.timerId = setInterval(() => {
+        state.timeLeft -= 1;
+        el("timeLeft").textContent = String(state.timeLeft);
+        if (state.timeLeft <= 0) { clearInterval(state.timerId); outOfTime(); }
+      }, 1000);
+    }
+
+    function outOfTime() {
+      if (state.answered) return;
+      state.answered = true;
+      state.lives -= 1;
+      updateHudCounts();
+      const q = currentQuestion();
+      showFeedback(false, q);
+      el("nextBtn").disabled = false;
+      if (state.lives <= 0) endGame();
+    }
+
+    function currentQuestion() { return state.pool[state.order[state.index]]; }
+
+    function nextQuestion() {
+      if (state.index >= state.pool.length) { endGame(); return; }
+      state.answered = false;
+      el("hintArea").textContent = "";
+      el("powerUpStatus").textContent = state.doubleNext ? "Double points active on this question!" : "";
+      const q = currentQuestion();
+      el("qIndex").textContent = String(state.index + 1);
+      el("questionText").textContent = q.q;
+      const choices = el("choices");
+      choices.innerHTML = "";
+      q._masked = new Set();
+      q.choices.forEach((text, i) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.textContent = text;
+        btn.dataset.index = String(i);
+        btn.addEventListener("click", onChoiceClick);
+        li.appendChild(btn);
+        choices.appendChild(li);
+      });
+      el("feedback").textContent = "";
+      el("nextBtn").disabled = true;
+      startTimer();
+    }
+
+    function onChoiceClick(e) {
+      if (state.answered) return;
+      const idx = Number(e.currentTarget.dataset.index);
+      answer(idx);
+    }
+
+    function answer(idx) {
+      state.answered = true;
+      clearInterval(state.timerId);
+      const q = currentQuestion();
+      const correct = idx === q.answer;
+      if (correct) {
+        let gained = 100 + Math.max(0, state.timeLeft) * 2;
+        if (state.doubleNext) { gained *= 2; state.doubleNext = false; }
+        state.score += gained;
+      } else {
+        state.lives -= 1;
+      }
+      updateHudCounts();
+      lockChoices(q.answer, idx);
+      showFeedback(correct, q);
+      el("nextBtn").disabled = false;
+      if (!correct && state.lives <= 0) endGame();
+    }
+
+    function lockChoices(correctIndex, chosenIndex) {
+      const buttons = el("choices").querySelectorAll("button");
+      buttons.forEach((b, i) => {
+        b.disabled = true;
+        if (i === correctIndex) b.title = "Correct answer";
+        if (i === chosenIndex && i !== correctIndex) b.title = "Your choice (wrong)";
+      });
+    }
+
+    function showFeedback(correct, q) {
+      el("feedback").textContent = correct ? "Correct!" : `Wrong. Correct answer: ${q.choices[q.answer]}`;
+    }
+
+    function usePowerUp(type) {
+      if (state.answered) return;
+      const c = state.powerUps;
+      const q = currentQuestion();
+      switch (type) {
+        case "fifty":
+          if (c.fifty <= 0) return; c.fifty -= 1; fiftyFifty(q); el("powerUpStatus").textContent = "Two wrong options removed."; break;
+        case "skip":
+          if (c.skip <= 0) return; c.skip -= 1; state.doubleNext = false; state.score += 50; state.answered = true; clearInterval(state.timerId); lockChoices(q.answer, q.answer); showFeedback(true, q); el("nextBtn").disabled = false; el("powerUpStatus").textContent = "Question skipped as correct (+50)."; break;
+        case "double":
+          if (c.double <= 0) return; c.double -= 1; state.doubleNext = true; el("powerUpStatus").textContent = "Double points activated for this question."; break;
+        case "freeze":
+          if (c.freeze <= 0) return; c.freeze -= 1; state.timeLeft += 10; el("timeLeft").textContent = String(state.timeLeft); el("powerUpStatus").textContent = "Time extended by 10 seconds."; break;
+        case "hint":
+          if (c.hint <= 0) return; c.hint -= 1; el("hintArea").textContent = `Hint: ${q.hint || "No hint available."}`; el("powerUpStatus").textContent = "Hint shown (no penalty)."; break;
+      }
+      updateHudCounts();
+    }
+
+    function fiftyFifty(q) {
+      const wrong = [];
+      q.choices.forEach((_, i) => { if (i !== q.answer) wrong.push(i); });
+      shuffle(wrong);
+      const toHide = wrong.slice(0, 2);
+      const buttons = el("choices").querySelectorAll("button");
+      toHide.forEach(i => {
+        buttons[i].disabled = true; q._masked.add(i); buttons[i].textContent = "—";
+      });
+    }
+
+    function endGame() {
+      clearInterval(state.timerId);
+      el("game").hidden = true;
+      el("end").hidden = false;
+      el("summary").textContent = `Subject: ${state.subject.toUpperCase()} | Score: ${state.score} | Answered: ${state.index + (state.answered ? 1 : 0)} / ${state.pool.length}`;
+    }
+
+    // Event wiring
+    el("startBtn").addEventListener("click", initGame);
+    el("playAgainBtn").addEventListener("click", () => { el("menu").hidden = false; el("game").hidden = true; el("end").hidden = true; renderHighScores(); });
+    el("subject").addEventListener("change", renderHighScores);
+
+    el("nextBtn").addEventListener("click", () => {
+      if (state.index < state.pool.length - 1) { state.index += 1; nextQuestion(); }
+      else { endGame(); }
+    });
+
+    el("pu-5050").addEventListener("click", () => usePowerUp("fifty"));
+    el("pu-skip").addEventListener("click", () => usePowerUp("skip"));
+    el("pu-double").addEventListener("click", () => usePowerUp("double"));
+    el("pu-freeze").addEventListener("click", () => usePowerUp("freeze"));
+    el("pu-hint").addEventListener("click", () => usePowerUp("hint"));
+
+    el("saveScoreBtn").addEventListener("click", () => {
+      const name = el("playerName").value.trim();
+      saveHighScore(state.subject, name || "Player", state.score);
+      el("saveMsg").textContent = "Saved! Check the High Scores in the New Game menu.";
+    });
+
+    // Keyboard shortcuts for power‑ups
+    document.addEventListener("keydown", e => {
+      if (el("game").hidden) return;
+      if (e.key === "1") usePowerUp("fifty");
+      if (e.key === "2") usePowerUp("skip");
+      if (e.key === "3") usePowerUp("double");
+      if (e.key === "4") usePowerUp("freeze");
+      if (e.key === "5") usePowerUp("hint");
+    });
+
+    // Init
+    renderHighScores();
+  </script>
+</body>
+</html>
