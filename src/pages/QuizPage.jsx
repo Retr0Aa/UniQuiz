@@ -283,12 +283,18 @@ export default function QuizPage() {
 
             <div className="power-ups">
               <h3>Power-Ups</h3>
-              <div>
-                <button onClick={() => usePower("fifty")}>50-50 ({powerUps.fifty})</button>
-                <button onClick={() => usePower("skip")}>Skip ({powerUps.skip})</button>
-                <button onClick={() => usePower("double")}>Double ({powerUps.double})</button>
-                <button onClick={() => usePower("freeze")}>Freeze (+10s) ({powerUps.freeze})</button>
-                <button onClick={() => usePower("hint")}>Hint ({powerUps.hint})</button>
+              <div className="power-buttons">
+                <div className="powers">
+                  <button onClick={() => usePower("fifty")}>50-50 ({powerUps.fifty})</button>
+                  <div className="vr"></div>
+                  <button onClick={() => usePower("skip")}>Skip ({powerUps.skip})</button>
+                  <div className="vr"></div>
+                  <button onClick={() => usePower("double")}>Double ({powerUps.double})</button>
+                  <div className="vr"></div>
+                  <button onClick={() => usePower("freeze")}>Freeze (+10s) ({powerUps.freeze})</button>
+                  <div className="vr"></div>
+                  <button onClick={() => usePower("hint")}>Hint ({powerUps.hint})</button>
+                </div>
               </div>
               <p>{powerStatus}</p>
             </div>

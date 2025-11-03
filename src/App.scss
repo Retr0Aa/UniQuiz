@@ -72,3 +72,39 @@ h1 {
     bottom: 20px;
     left: 20px;
 }
+
+.power-buttons {
+    display: flex;
+    justify-content: center;
+
+    .powers {
+        background-color: #b64747;
+        width: fit-content;
+        
+        border-radius: 10px;
+        display: flex;
+
+        button {
+            border: none;
+            border-radius: 10px;
+            background: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            padding: 10px;
+        }
+
+        button:hover {
+            background-color: #863434;
+            cursor: pointer;
+        }
+
+        .vr {
+            background-color: #dd5858;
+            height: 30px;
+            align-self: center;
+            width: 2px;
+        }
+    }
+}
