@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import book from '../assets/book.png';
+import { Link } from "react-router-dom";
+import book from "../assets/book.png";
 
 export default function MainMenuPage() {
   const [subject, setSubject] = useState("math");
+  const [count, setCount] = useState(10);
   const [highScores, setHighScores] = useState([]);
 
   useEffect(() => {
@@ -20,14 +22,9 @@ export default function MainMenuPage() {
 
       <div className="container">
         <h1>UniQuiz</h1>
-        <p>Subjects, timed questions, and power‑ups.</p>
+        <p>Subjects, timed questions, and power-ups.</p>
 
         <div className="main-menu">
-          <a href="/quiz" className="menu-btn" role="button">Start</a>
-        </div>
-
-        <div className="high-scores">
-          <h2>High Scores</h2>
           <label>Subject:</label>
           <select value={subject} onChange={(e) => setSubject(e.target.value)}>
             {["math", "biology", "geography", "history", "computers"].map((s) => (
@@ -37,11 +34,32 @@ export default function MainMenuPage() {
             ))}
           </select>
 
+          <label style={{ marginLeft: 12 }}>Questions:</label>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            value={count}
+            onChange={(e) => setCount(Math.min(50, Math.max(1, Number(e.target.value || 10))))}
+            style={{ width: 80 }}
+          />
+
+          <div style={{ marginTop: 16 }}>
+            <Link
+              to={`/quiz?subject=${encodeURIComponent(subject)}&count=${count}`}
+              className="menu-btn"
+              role="button"
+            >
+              Start
+            </Link>
+          </div>
+        </div>
+
+        <div className="high-scores">
+          <h2>High Scores</h2>
           <div className="scores">
             {highScores.length
-              ? highScores.map((r, i) => (
-                  <div key={i}>{`${i + 1}. ${r.name} — ${r.score}`}</div>
-                ))
+              ? highScores.map((r, i) => <div key={i}>{`${i + 1}. ${r.name} — ${r.score}`}</div>)
               : "No scores yet."}
           </div>
         </div>

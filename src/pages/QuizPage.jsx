@@ -82,22 +82,45 @@ export default function QuizPage() {
     };
   }, [timerId]);
 
-  const startGame = () => {
-    const questions = shuffle(SUBJECTS[subject].map(q => ({ ...q, _masked: new Set() })));
-    setPool(questions);
+  const startGame = async () => {
+  setMenu(false);
+  setGame(true);
+  setEnd(false);
+
+  try {
+    const r = await fetch(`http://localhost:3001/api/questions?subject=${subject}`);
+    const { questions } = await r.json();
+
+    const questionsWithMask = (questions?.length ? questions : SUBJECTS[subject])
+      .map(q => ({ ...q, _masked: new Set() }));
+
+    const shuffled = shuffle(questionsWithMask);
+    setPool(shuffled);
     setIndex(0);
     setScore(0);
     setLives(3);
     setBaseTime(20);
     setAnswered(false);
     setDoubleActive(false);
-    setHint("");
-    setPowerStatus("");
-    setMenu(false);
-    setGame(true);
-    setEnd(false);
-    nextQuestion(questions, 0, 20);
-  };
+    setHint('');
+    setPowerStatus('');
+    nextQuestion(shuffled, 0, 20);
+  } catch {
+    // Fallback to your static pool if API fails
+    const fallback = shuffle(SUBJECTS[subject].map(q => ({ ...q, _masked: new Set() })));
+    setPool(fallback);
+    setIndex(0);
+    setScore(0);
+    setLives(3);
+    setBaseTime(20);
+    setAnswered(false);
+    setDoubleActive(false);
+    setHint('');
+    setPowerStatus('AI generation failed. Using built-in questions.');
+    nextQuestion(fallback, 0, 20);
+  }
+};
+
 
   // start timer for question pool[idx]
   const nextQuestion = (qPool = pool, idx = index, timeForQuestion = baseTime) => {
