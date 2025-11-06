@@ -25,29 +25,32 @@ export default function MainMenuPage() {
         <p>Subjects, timed questions, and power-ups.</p>
 
         <div className="main-menu">
-          <label>Subject:</label>
-          <select value={subject} onChange={(e) => setSubject(e.target.value)}>
-            {["math", "biology", "geography", "history", "computers"].map((s) => (
-              <option key={s} value={s}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-              </option>
-            ))}
-          </select>
+          <div style={{ "display": "none" }}>
+            <label>Subject:</label>
+            <select value={subject} onChange={(e) => setSubject(e.target.value)}>
+              {["math", "biology", "geography", "history", "computers"].map((s) => (
+                <option key={s} value={s}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </option>
+              ))}
+            </select>
 
-          <label style={{ marginLeft: 12 }}>Questions:</label>
-          <input
-            type="number"
-            min={1}
-            max={50}
-            value={count}
-            onChange={(e) => setCount(Math.min(50, Math.max(1, Number(e.target.value || 10))))}
-            style={{ width: 80 }}
-          />
+            <label style={{ marginLeft: 12 }}>Questions:</label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={count}
+              onChange={(e) => setCount(Math.min(50, Math.max(1, Number(e.target.value || 10))))}
+              style={{ width: 80 }}
+            />
+
+          </div>
 
           <div style={{ marginTop: 16 }}>
             <Link
               to={`/quiz?subject=${encodeURIComponent(subject)}&count=${count}`}
-              className="menu-btn"
+              className="btn"
               role="button"
             >
               Start

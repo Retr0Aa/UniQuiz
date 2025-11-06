@@ -32,7 +32,8 @@ h1 {
     margin-bottom: 20px;
 }
 
-.menu-btn {
+.btn,
+.input-text {
     display: block;
     width: 100%;
     margin: 30px auto;
@@ -47,9 +48,15 @@ h1 {
     transition: 0.3s;
 }
 
-.menu-btn:hover {
+.btn:hover {
     background: rgba(255, 126, 126, 0.75);
     transform: scale(1.03);
+}
+
+.input-text {
+    padding: 10px;
+
+    font-size: 20px;
 }
 
 .books-icon {
@@ -80,7 +87,7 @@ h1 {
     .powers {
         background-color: #b64747;
         width: fit-content;
-        
+
         border-radius: 10px;
         display: flex;
 
@@ -93,6 +100,7 @@ h1 {
             font-weight: bold;
             margin: 10px;
             padding: 10px;
+            transition: 0.3s;
         }
 
         button:hover {
@@ -107,4 +115,95 @@ h1 {
             width: 2px;
         }
     }
+}
+
+.choices {
+    display: flex;
+    justify-content: center;
+
+    .choice-buttons {
+        background-color: #70b647;
+        width: fit-content;
+
+        border-radius: 10px;
+        display: flex;
+
+        .choice button {
+            font-size: 20pt;
+        }
+
+        .choice button:disabled {
+            background-color: #7fd24f;
+            color: #dfdfdf;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            background: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px;
+            padding: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #518434;
+            cursor: pointer;
+        }
+
+        .vr {
+            background-color: #518434;
+            height: 30px;
+            align-self: center;
+            width: 2px;
+        }
+    }
+}
+
+.choice {
+    display: flex;
+}
+
+.loading-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 70vh;
+    font-size: 1.5em;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.spinner {
+    margin-top: 20px;
+    width: 50px;
+    height: 50px;
+    border: 10px solid #ddd;
+    border-top-color: #b64747;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.quiz-end {
+    display: flex;
+    flex-direction: column;
 }

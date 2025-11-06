@@ -52,9 +52,10 @@ export default function QuizPage() {
   const [menu, setMenu] = useState(true);
   const [game, setGame] = useState(false);
   const [end, setEnd] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [subject, setSubject] = useState("math");
-  const [pool, setPool] = useState([]); // each question may have ._masked Set
+  const [pool, setPool] = useState([]);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -63,7 +64,7 @@ export default function QuizPage() {
   const [answered, setAnswered] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [powerUps, setPowerUps] = useState({ fifty: 2, skip: 2, double: 1, freeze: 1, hint: 2 });
-  const [doubleActive, setDoubleActive] = useState(false); // applies to current question
+  const [doubleActive, setDoubleActive] = useState(false);
   const [hint, setHint] = useState("");
   const [timerId, setTimerId] = useState(null);
   const [powerStatus, setPowerStatus] = useState("");
@@ -83,46 +84,48 @@ export default function QuizPage() {
   }, [timerId]);
 
   const startGame = async () => {
-  setMenu(false);
-  setGame(true);
-  setEnd(false);
+    setMenu(false);
+    setGame(false);
+    setEnd(false);
+    setLoading(true);
 
-  try {
-    const r = await fetch(`http://localhost:3001/api/questions?subject=${subject}`);
-    const { questions } = await r.json();
+    try {
+      const r = await fetch(`http://localhost:3001/api/questions?subject=${subject}`);
+      const { questions } = await r.json();
 
-    const questionsWithMask = (questions?.length ? questions : SUBJECTS[subject])
-      .map(q => ({ ...q, _masked: new Set() }));
+      const questionsWithMask = (questions?.length ? questions : SUBJECTS[subject])
+        .map(q => ({ ...q, _masked: new Set() }));
 
-    const shuffled = shuffle(questionsWithMask);
-    setPool(shuffled);
-    setIndex(0);
-    setScore(0);
-    setLives(3);
-    setBaseTime(20);
-    setAnswered(false);
-    setDoubleActive(false);
-    setHint('');
-    setPowerStatus('');
-    nextQuestion(shuffled, 0, 20);
-  } catch {
-    // Fallback to your static pool if API fails
-    const fallback = shuffle(SUBJECTS[subject].map(q => ({ ...q, _masked: new Set() })));
-    setPool(fallback);
-    setIndex(0);
-    setScore(0);
-    setLives(3);
-    setBaseTime(20);
-    setAnswered(false);
-    setDoubleActive(false);
-    setHint('');
-    setPowerStatus('AI generation failed. Using built-in questions.');
-    nextQuestion(fallback, 0, 20);
-  }
-};
+      const shuffled = shuffle(questionsWithMask);
+      setPool(shuffled);
+      setIndex(0);
+      setScore(0);
+      setLives(3);
+      setBaseTime(20);
+      setAnswered(false);
+      setDoubleActive(false);
+      setHint('');
+      setPowerStatus('');
+      setLoading(false);
+      setGame(true);
+      nextQuestion(shuffled, 0, 20);
+    } catch {
+      const fallback = shuffle(SUBJECTS[subject].map(q => ({ ...q, _masked: new Set() })));
+      setPool(fallback);
+      setIndex(0);
+      setScore(0);
+      setLives(3);
+      setBaseTime(20);
+      setAnswered(false);
+      setDoubleActive(false);
+      setHint('');
+      setPowerStatus('AI generation failed. Using built-in questions.');
+      setLoading(false);
+      setGame(true);
+      nextQuestion(fallback, 0, 20);
+    }
+  };
 
-
-  // start timer for question pool[idx]
   const nextQuestion = (qPool = pool, idx = index, timeForQuestion = baseTime) => {
     if (!qPool || idx >= qPool.length) return endGame();
     setHint("");
@@ -162,7 +165,6 @@ export default function QuizPage() {
     } else {
       setLives((l) => l - 1);
       setFeedback(`❌ Wrong! Correct: ${currentQuestion.choices[currentQuestion.answer]}`);
-      // if lives will drop to zero, end will be triggered by effect of setLives not immediate, so check roughly:
       if (lives - 1 <= 0) endGame();
     }
   };
@@ -184,14 +186,27 @@ export default function QuizPage() {
   const saveScore = () => {
     const key = `quiz-hs-${subject}`;
     const data = JSON.parse(localStorage.getItem(key) || "[]");
-    data.push({ name: playerName || "Player", score, date: new Date().toISOString() });
+    const name = playerName || "Player";
+
+    // Check if player already exists
+    const existingIndex = data.findIndex(item => item.name === name);
+
+    if (existingIndex !== -1) {
+      // Replace existing score if new one is higher
+      if (score > data[existingIndex].score) {
+        data[existingIndex] = { name, score, date: new Date().toISOString() };
+      }
+    } else {
+      // Add new score
+      data.push({ name, score, date: new Date().toISOString() });
+    }
+
     data.sort((a, b) => b.score - a.score);
     const trimmed = data.slice(0, 20);
     localStorage.setItem(key, JSON.stringify(trimmed));
     setHighScores(trimmed);
   };
 
-  // power-ups implemented to mirror vanilla behavior
   const usePower = (type) => {
     if (answered || !currentQuestion) return;
     const c = { ...powerUps };
@@ -200,7 +215,6 @@ export default function QuizPage() {
     const q = pool[qIdx];
     switch (type) {
       case "fifty": {
-        // remove two wrong options
         const wrong = [];
         q.choices.forEach((_, i) => { if (i !== q.answer) wrong.push(i); });
         shuffle(wrong);
@@ -216,7 +230,6 @@ export default function QuizPage() {
       }
       case "skip": {
         c.skip -= 1;
-        // mark answered as correct, give +50 and enable Next
         setScore((s) => s + 50);
         setAnswered(true);
         if (timerId) clearInterval(timerId);
@@ -246,7 +259,6 @@ export default function QuizPage() {
     setPowerUps(c);
   };
 
-  // helper render for choice button state
   const isChoiceHidden = (q, i) => q && q._masked && q._masked.has(i);
 
   return (
@@ -269,7 +281,7 @@ export default function QuizPage() {
                 </option>
               ))}
             </select>
-            <button onClick={startGame}>Start</button>
+            <button className="btn" onClick={startGame}>Start</button>
 
             <h3>High Scores</h3>
             <div className="scores">
@@ -277,6 +289,13 @@ export default function QuizPage() {
                 ? highScores.map((r, i) => <div key={i}>{`${i + 1}. ${r.name} — ${r.score}`}</div>)
                 : "No scores yet."}
             </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="loading-screen">
+            <h2>Generating questions with Gemini...</h2>
+            <div className="spinner"></div>
           </div>
         )}
 
@@ -290,16 +309,23 @@ export default function QuizPage() {
             <div className="question-box">
               <h3>{currentQuestion.q}</h3>
               <div className="choices">
-                {currentQuestion.choices.map((c, i) => (
-                  <button
-                    key={i}
-                    onClick={() => answer(i)}
-                    disabled={answered || isChoiceHidden(currentQuestion, i)}
-                    aria-hidden={isChoiceHidden(currentQuestion, i)}
-                  >
-                    {isChoiceHidden(currentQuestion, i) ? "—" : c}
-                  </button>
-                ))}
+                <div className="choice-buttons">
+                  {currentQuestion.choices.map((c, i) => (
+                    <div className="choice">
+                      <button
+                        key={i}
+                        onClick={() => answer(i)}
+                        disabled={answered || isChoiceHidden(currentQuestion, i)}
+                        aria-hidden={isChoiceHidden(currentQuestion, i)}
+                        style={ answered ? {"backgroundColor": (c === currentQuestion.choices[currentQuestion.answer] ? "green" : "red" )} : {}}
+                      >
+                        {isChoiceHidden(currentQuestion, i) ? "—" : c}
+                      </button>
+
+                      {i < currentQuestion.choices.length - 1 ? <div className="vr"></div> : <></>}
+                    </div>
+                  ))}
+                </div>
               </div>
               <p className="hint">{hint}</p>
             </div>
@@ -307,16 +333,16 @@ export default function QuizPage() {
             <div className="power-ups">
               <h3>Power-Ups</h3>
               <div className="power-buttons">
-                <div className="powers">
-                  <button onClick={() => usePower("fifty")}>50-50 ({powerUps.fifty})</button>
+                <div className="powers" style={answered ? {backgroundColor: "#dd5858"} : {}}>
+                  <button disabled={answered} onClick={() => usePower("fifty")}>50-50 ({powerUps.fifty})</button>
                   <div className="vr"></div>
-                  <button onClick={() => usePower("skip")}>Skip ({powerUps.skip})</button>
+                  <button disabled={answered} onClick={() => usePower("skip")}>Skip ({powerUps.skip})</button>
                   <div className="vr"></div>
-                  <button onClick={() => usePower("double")}>Double ({powerUps.double})</button>
+                  <button disabled={answered} onClick={() => usePower("double")}>Double ({powerUps.double})</button>
                   <div className="vr"></div>
-                  <button onClick={() => usePower("freeze")}>Freeze (+10s) ({powerUps.freeze})</button>
+                  <button disabled={answered} onClick={() => usePower("freeze")}>Freeze (+10s) ({powerUps.freeze})</button>
                   <div className="vr"></div>
-                  <button onClick={() => usePower("hint")}>Hint ({powerUps.hint})</button>
+                  <button disabled={answered} onClick={() => usePower("hint")}>Hint ({powerUps.hint})</button>
                 </div>
               </div>
               <p>{powerStatus}</p>
@@ -324,13 +350,12 @@ export default function QuizPage() {
 
             <p className="feedback">{feedback}</p>
             <button
-              className="next-btn"
+              className="next-btn btn"
               disabled={!answered}
               onClick={() => {
                 if (index < pool.length - 1) {
                   const nextIdx = index + 1;
                   setIndex(nextIdx);
-                  // reset doubleActive for next question (double is per-question)
                   setDoubleActive(false);
                   nextQuestion(pool, nextIdx, baseTime);
                 } else endGame();
@@ -350,15 +375,24 @@ export default function QuizPage() {
               onChange={(e) => setPlayerName(e.target.value)}
               placeholder="Enter your name"
               maxLength={20}
+              className="input-text"
             />
-            <button onClick={() => {
-              window.location.href = "/";
-              saveScore();
-            }}>Save High Score</button>
+            <button
+              onClick={() => {
+                window.location.href = "/";
+                saveScore();
+              }}
+
+              className="btn"
+            >
+              Save High Score
+            </button>
             <button
               onClick={() => {
                 window.location.href = "/";
               }}
+
+              className="btn"
             >
               Play Again
             </button>
