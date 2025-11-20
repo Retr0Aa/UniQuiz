@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',  // allow connections from outside localhost
-    port: 5173         // or any port your host allows
+    port: 5173,
+    host: true,
+    allowedHosts: ['threeuniquiz.onrender.com'] // allow only your host    // or any port your host allows
   }
 });
